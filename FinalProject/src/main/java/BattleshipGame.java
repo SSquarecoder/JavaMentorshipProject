@@ -1,12 +1,12 @@
-import java.util.Arrays;
 import java.util.Scanner;
 
 public class BattleshipGame {
-    private static final int boardSize = 10;
-    private static final char emptyCell = '*';
-    private static final char hitCell = 'H';
-    private static final char missCell = 'M';
-    private static final int shipSize = 3;
+    private static final int board_size = 10;
+    private static final char empty_cell = '*';
+    private static final char ship_cell = 'S';
+    private static final char hit_cell = 'H';
+    private static final char miss_cell = 'M';
+    private static final int ship_size = 3;
 
     private static BattleShip player1Board = new BattleShip();
     private static BattleShip player2Board = new BattleShip();
@@ -33,8 +33,6 @@ public class BattleshipGame {
         }
 
         if (level == 2) {
-            player1Board.initBoard();
-            player2Board.initBoard();
             Scanner scanner = new Scanner(System.in);
 
             System.out.print("Enter Player 1 name: ");
@@ -42,10 +40,22 @@ public class BattleshipGame {
             System.out.print("Enter Player 2 name: ");
             player2Name = scanner.nextLine();
 
+            // Display empty boards
+            System.out.println(player1Name + ", here is your empty board:");
+            player1Board.dispBoard(false);
+            System.out.println(player2Name + ", here is your empty board:");
+            player2Board.dispBoard(false);
+
             System.out.println(player1Name + ", place your ships:");
             placeShips(scanner, player1Board);
             System.out.println(player2Name + ", place your ships:");
             placeShips(scanner, player2Board);
+
+            // Show boards with ships placed
+            System.out.println(player1Name + ", your board with ships placed:");
+            player1Board.dispBoard(true);
+            System.out.println(player2Name + ", your board with ships placed:");
+            player2Board.dispBoard(true);
 
             boolean gameOver = false;
             while (!gameOver) {
@@ -73,11 +83,11 @@ public class BattleshipGame {
     }
 
     private static boolean placeShip(BattleShip board, String[] coordinates) {
-        if (coordinates.length != shipSize) return false;
+        if (coordinates.length != ship_size) return false;
 
-        int[][] parsedCoordinates = new int[shipSize][2];
+        int[][] parsedCoordinates = new int[ship_size][2];
 
-        for (int i = 0; i < shipSize; i++) {
+        for (int i = 0; i < ship_size; i++) {
             String[] coord = coordinates[i].split(",");
             if (coord.length != 2) return false;
 
@@ -85,7 +95,7 @@ public class BattleshipGame {
             try {
                 x = Integer.parseInt(coord[0]) - 1;
                 y = Integer.parseInt(coord[1]) - 1;
-                if (x < 0 || x >= boardSize || y < 0 || y >= boardSize || board.getCell(x, y) != emptyCell) {
+                if (x < 0 || x >= board_size || y < 0 || y >= board_size || board.getCell(x, y) != empty_cell) {
                     return false;
                 }
                 parsedCoordinates[i][0] = x;
@@ -100,7 +110,7 @@ public class BattleshipGame {
         boolean isHorizontal = parsedCoordinates[0][0] == parsedCoordinates[1][0];
         boolean isVertical = parsedCoordinates[0][1] == parsedCoordinates[1][1];
 
-        for (int i = 1; i < shipSize; i++) {
+        for (int i = 1; i < ship_size; i++) {
             if (isHorizontal) {
                 if (parsedCoordinates[i][0] != parsedCoordinates[i - 1][0] || parsedCoordinates[i][1] != parsedCoordinates[i - 1][1] + 1) {
                     isValid = false;
@@ -119,8 +129,8 @@ public class BattleshipGame {
 
         if (!isValid) return false;
 
-        for (int i = 0; i < shipSize; i++) {
-            board.placeMark(parsedCoordinates[i][0], parsedCoordinates[i][1], 'S'); // Mark ships as 'S'
+        for (int i = 0; i < ship_size; i++) {
+            board.placeMark(parsedCoordinates[i][0], parsedCoordinates[i][1], ship_cell); // Mark ships as 'S'
         }
         return true;
     }
@@ -140,8 +150,8 @@ public class BattleshipGame {
             try {
                 x = Integer.parseInt(input[0]) - 1;
                 y = Integer.parseInt(input[1]) - 1;
-                if (x < 0 || x >= boardSize || y < 0 || y >= boardSize) {
-                    System.out.println("Coordinates out of bounds. Please enter values between 1 and " + boardSize + ".");
+                if (x < 0 || x >= board_size || y < 0 || y >= board_size) {
+                    System.out.println("Coordinates out of bounds. Please enter values between 1 and " + board_size + ".");
                     continue;
                 }
             } catch (NumberFormatException e) {
@@ -149,55 +159,58 @@ public class BattleshipGame {
                 continue;
             }
 
-            if (opponentBoard.getCell(x, y) == 'S') {
+            if (opponentBoard.getCell(x, y) == ship_cell) { // Check for ship directly
                 System.out.println("Hit!");
-                opponentBoard.placeMark(x, y, hitCell);
+                opponentBoard.placeMark(x, y, hit_cell);
                 if (checkForSunkShip(opponentBoard, x, y)) {
+                    // Correctly update remaining ships count
                     if (currentPlayerName.equals(player1Name)) {
                         player2ShipsRemaining--;
                     } else {
                         player1ShipsRemaining--;
                     }
-                    System.out.println("You sunk a ship!yayyy " + getRemainingShips(opponentName) + " ships remaining.");
+                    System.out.println("You sunk a ship! " + getRemainingShips(opponentName) + " ships remaining.");
                     if (getRemainingShips(opponentName) == 0) {
-                        System.out.println(currentPlayerName + " you conqured the island!");
-                        return true;
+                        System.out.println("Congratulations! " + currentPlayerName + " wins!");
+                        return true; // Game over
                     }
+                } else {
+                    System.out.println("You hit a ship!");
                 }
-            } else if (opponentBoard.getCell(x, y) == emptyCell) {
-                System.out.println("Miss!");
-                opponentBoard.placeMark(x, y, missCell);
             } else {
-                System.out.println("You already attacked this coordinate. Try again.");
-                continue;
+                System.out.println("Miss!");
+                opponentBoard.placeMark(x, y, miss_cell);
             }
-
-            opponentBoard.dispBoard(); // Display the board after attack
-            validAttack = true; // End the loop after a successful attack
+            validAttack = true;
+            // Show the updated board
+            System.out.println(opponentName + "'s board after attack:");
+            opponentBoard.dispBoard(false);
         }
-
-        return false;
+        return false; // Game not over
     }
 
     private static boolean checkForSunkShip(BattleShip board, int hitX, int hitY) {
-        return checkDirection(board, hitX, hitY, 1, 0) || checkDirection(board, hitX, hitY, 0, 1);
+        return checkDirection(board, hitX, hitY, 1, 0) || // Horizontal
+                checkDirection(board, hitX, hitY, 0, 1);  // Vertical
     }
 
     private static boolean checkDirection(BattleShip board, int hitX, int hitY, int dx, int dy) {
         int hits = 0;
 
+        // Check in both directions from the hit point
         for (int i = -2; i <= 2; i++) {
             int x = hitX + i * dx;
             int y = hitY + i * dy;
-            if (x >= 0 && x < boardSize && y >= 0 && y < boardSize) {
-                if (board.getCell(x, y) == hitCell) {
+
+            if (x >= 0 && x < board_size && y >= 0 && y < board_size) {
+                if (board.getCell(x, y) == hit_cell) {
                     hits++;
-                } else if (board.getCell(x, y) == 'S') {
-                    return false;
+                } else if (board.getCell(x, y) == 'S') { // Check for remaining ship cells
+                    return false; // Not all parts of the ship have been hit
                 }
             }
         }
-        return hits == shipSize;
+        return hits == ship_size; // The ship is sunk if all parts have been hit
     }
 
     private static int getRemainingShips(String playerName) {
